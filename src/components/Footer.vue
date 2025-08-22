@@ -1,9 +1,9 @@
 <template>
-  <footer class="footer bg-dark text-light text-center">
-    <p class="mb-0 d-flex justify-content-center align-items-center py-3">
-      <i class="bi bi-lightning-charge-fill me-2 text-info fs-5"></i>
-      <span class="fw-semibold">© 2025 Adventur Manager System - Todos los derechos reservados</span>
-    </p>
+  <footer class="footer">
+    <div class="footer-content">
+      <i class="bi bi-lightning-charge-fill icon"></i>
+      <span class="text">© 2025 Adventur Manager System — Todos los derechos reservados</span>
+    </div>
   </footer>
 </template>
 
@@ -15,16 +15,33 @@ export default {
 
 <style scoped>
 .footer {
-  position: relative;
   width: 100%;
-  bottom: 0;
-  background-image: linear-gradient(180deg, rgba(26,188,156,0.08) 0%, rgba(44,62,80,0.85) 100%);
-  border-top: 1px solid #34495e;
-  box-shadow: 0 -4px 24px rgba(44, 62, 80, 0.12);
-  backdrop-filter: blur(6px);
-  border-bottom-left-radius: 18px;
-  border-bottom-right-radius: 18px;
+  padding: 1.2rem 0;
+  background: linear-gradient(135deg, #1e1e2f 0%, #2a2a3d 100%);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 -6px 16px rgba(0, 0, 0, 0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  backdrop-filter: blur(8px);
+  /* SIN bordes redondeados */
+  border-radius: 0;
+}
+
+.footer-content {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
   font-size: 0.95rem;
+  color: #d8e3ea;
+  font-weight: 500;
   letter-spacing: 0.4px;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+.footer-content .icon {
+  font-size: 1.2rem;
+  color: #4fd1c5;
+  filter: drop-shadow(0 0 2px rgba(79, 209, 197, 0.6));
 }
 </style>

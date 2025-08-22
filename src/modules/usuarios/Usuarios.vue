@@ -1,299 +1,266 @@
+<!-- src/modules/usuarios/Usuarios.vue -->
 <template>
-  <div class="container">
-    <Loading :active="cargando" :is-full-page="true" />
+  <div class="contenedor">
+    <!-- Header -->
+    <div class="encabezado">
+      <h2><i class="bi bi-people-fill"></i> Lista de Usuarios</h2>
 
-    <h1>Gestión de Usuarios</h1>
-
-    <!-- Alerta Toast -->
-    <div v-if="showToast" class="toast success">
-      <i class="bi bi-check-circle-fill me-2"></i> Usuario {{ editando ? 'actualizado' : 'registrado' }} correctamente
+      <div class="acciones-top">
+        <input
+          v-model="busqueda"
+          class="buscador"
+          placeholder="Buscar usuario…"
+          @keyup.enter.prevent="go(1)"
+        />
+        <button type="button" class="btn" :disabled="loading" @click.prevent="go(page)">
+          <i class="bi bi-arrow-clockwise"></i> Recargar
+        </button>
+        <router-link class="btn-nuevo" :to="{ name: 'RegistroUsuarios' }">
+          <i class="bi bi-plus-circle"></i> Nuevo
+        </router-link>
+      </div>
     </div>
 
-    <form @submit.prevent="guardarUsuario" class="form">
-      <div class="input-icon" :class="claseInput('nombre')">
-        <i class="bi bi-person-fill icon"></i>
-        <input v-model="usuario.nombre" type="text" placeholder="Nombre" />
+    <!-- Tabla -->
+    <div class="tabla-wrap">
+      <table class="tabla">
+        <thead>
+          <tr>
+            <th style="width:60px">#</th>
+            <th>Nombre</th>
+            <th>Apellido</th>
+            <th>DNI</th>
+            <th>Correo</th>
+            <th>Rol</th>
+            <th style="width:120px">Estado</th>
+            <th style="width:160px">Acciones</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <!-- Cargando -->
+          <tr v-if="loading">
+            <td colspan="8" class="text-center">Cargando…</td>
+          </tr>
+
+          <!-- Vacío -->
+          <tr v-else-if="usuarios.length === 0">
+            <td colspan="8" class="text-center">Sin resultados</td>
+          </tr>
+
+          <!-- Filas -->
+          <tr v-else v-for="(u, i) in usuarios" :key="u.id ?? i">
+            <td>{{ indexBase + i }}</td>
+            <td>{{ u.nombre }}</td>
+            <td>{{ u.apellido }}</td>
+            <td>{{ u.dni }}</td>
+            <td>{{ u.correo }}</td>
+            <td>{{ u.rol?.nombre || u.rol_nombre || u.rol || '—' }}</td>
+            <td>
+              <span class="badge" :class="badgeClase(u.estado)">{{ estadoTexto(u.estado) }}</span>
+            </td>
+            <td class="acciones">
+              <button type="button" class="ver" title="Ver" @click.stop="verUsuario(u)">
+                <i class="bi bi-eye-fill"></i>
+              </button>
+
+              <button type="button" class="editar" title="Editar" @click.stop="editarUsuario(u)">
+                <i class="bi bi-pencil-square"></i>
+              </button>
+
+              <button type="button" class="eliminar" title="Eliminar" @click.stop="eliminarUsuario(u)">
+                <i class="bi bi-trash-fill"></i>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Paginación -->
+    <div class="pager" v-if="pagination.total > pagination.per_page">
+      <button class="btn-pager" :disabled="page<=1 || loading" @click="go(page-1)">Anterior</button>
+      <span>Página {{ page }} / {{ pagination.last_page }}</span>
+      <button class="btn-pager" :disabled="page>=pagination.last_page || loading" @click="go(page+1)">Siguiente</button>
+    </div>
+
+    <!-- Modal Detalle (con scroll y header pegajoso) -->
+    <div v-if="usuarioSeleccionado" class="modal-overlay" @click.self="usuarioSeleccionado = null">
+      <div class="modal-contenido">
+        <h4><i class="bi bi-card-text"></i> Detalles del Usuario</h4>
+
+        <table class="tabla-detalle">
+          <tr><td><strong>Nombre:</strong></td><td>{{ usuarioSeleccionado.nombre }}</td></tr>
+          <tr><td><strong>Apellido:</strong></td><td>{{ usuarioSeleccionado.apellido }}</td></tr>
+          <tr><td><strong>DNI:</strong></td><td>{{ usuarioSeleccionado.dni }}</td></tr>
+          <tr><td><strong>Correo:</strong></td><td>{{ usuarioSeleccionado.correo }}</td></tr>
+          <tr><td><strong>Teléfono:</strong></td><td>{{ usuarioSeleccionado.telefono || '—' }}</td></tr>
+          <tr><td><strong>Dirección:</strong></td><td>{{ usuarioSeleccionado.direccion || '—' }}</td></tr>
+          <tr><td><strong>Fecha nacimiento:</strong></td><td>{{ usuarioSeleccionado.fecha_nacimiento || 'No registrada' }}</td></tr>
+          <tr><td><strong>Rol:</strong></td><td>{{ usuarioSeleccionado.rol?.nombre || usuarioSeleccionado.rol_nombre || usuarioSeleccionado.rol || '—' }}</td></tr>
+          <tr>
+            <td><strong>Estado:</strong></td>
+            <td><span class="badge" :class="badgeClase(usuarioSeleccionado.estado)">{{ estadoTexto(usuarioSeleccionado.estado) }}</span></td>
+          </tr>
+        </table>
+
+        <div class="acciones-modal">
+          <button type="button" class="btn" @click="usuarioSeleccionado = null">Cerrar</button>
+        </div>
       </div>
-      <span v-if="errores.nombre" class="error-msg">{{ errores.nombre }}</span>
-
-      <div class="input-icon" :class="claseInput('apellido')">
-        <i class="bi bi-people-fill icon"></i>
-        <input v-model="usuario.apellido" type="text" placeholder="Apellido" />
-      </div>
-      <span v-if="errores.apellido" class="error-msg">{{ errores.apellido }}</span>
-
-      <div class="input-icon" :class="claseInput('dni')">
-        <i class="bi bi-credit-card icon"></i>
-        <input v-model="usuario.dni" type="text" placeholder="DNI" />
-      </div>
-      <span v-if="errores.dni" class="error-msg">{{ errores.dni }}</span>
-
-      <div class="input-icon" :class="claseInput('correo')">
-        <i class="bi bi-envelope-at-fill icon"></i>
-        <input v-model="usuario.correo" type="email" placeholder="Correo electrónico" />
-      </div>
-      <span v-if="errores.correo" class="error-msg">{{ errores.correo }}</span>
-
-      <div class="input-icon">
-        <i class="bi bi-telephone-fill icon"></i>
-        <input v-model="usuario.telefono" type="tel" placeholder="Teléfono" />
-      </div>
-
-      <div class="input-icon">
-        <i class="bi bi-geo-alt-fill icon"></i>
-        <input v-model="usuario.direccion" type="text" placeholder="Dirección" />
-      </div>
-
-      <div class="input-icon" :class="claseInput('fecha_nacimiento')">
-        <i class="bi bi-calendar-date-fill icon"></i>
-        <input v-model="usuario.fecha_nacimiento" type="date" />
-      </div>
-      <span v-if="errores.fecha_nacimiento" class="error-msg">{{ errores.fecha_nacimiento }}</span>
-
-      <div class="input-icon" :class="claseInput('rol')">
-        <i class="bi bi-shield-lock-fill icon"></i>
-        <select v-model="usuario.rol">
-          <option value="" disabled>Seleccione un rol</option>
-          <option value="Administrador">Administrador</option>
-          <option value="Usuario">Usuario</option>
-        </select>
-      </div>
-      <span v-if="errores.rol" class="error-msg">{{ errores.rol }}</span>
-
-      <button type="submit" class="btn-submit">
-        <i class="bi" :class="editando ? 'bi-pencil-square' : 'bi-plus-circle'"></i>
-        {{ editando ? 'Actualizar Usuario' : 'Registrar Usuario' }}
-      </button>
-    </form>
-
-    <div v-if="usuarios.length" class="list">
-      <h2>Usuarios Registrados</h2>
-      <ul>
-        <li v-for="(u, index) in usuarios" :key="index">
-          <strong>{{ u.nombre }} {{ u.apellido }}</strong> – {{ u.rol }}<br />
-          <small>{{ u.correo }} | {{ u.telefono }}</small><br />
-          <button @click="editarUsuario(index)" class="edit" title="Editar">
-            <i class="bi bi-pencil-square"></i>
-          </button>
-          <button @click="eliminarUsuario(index)" class="delete" title="Eliminar">
-            <i class="bi bi-trash-fill"></i>
-          </button>
-        </li>
-      </ul>
     </div>
   </div>
 </template>
 
 <script>
 import Swal from 'sweetalert2'
-import Loading from 'vue-loading-overlay'
+import { listUsuarios, deleteUsuario, getUsuario } from '@/services/usuarioService'
 
 export default {
-  components: { Loading },
   data() {
     return {
-      usuario: {
-        nombre: '', apellido: '', dni: '', correo: '',
-        telefono: '', direccion: '', fecha_nacimiento: '', rol: ''
-      },
+      busqueda: '',
       usuarios: [],
-      errores: {},
-      editando: false,
-      indiceEditar: null,
-      cargando: false,
-      showToast: false
-    };
+      pagination: { current_page: 1, per_page: 10, last_page: 1, total: 0 },
+      page: 1,
+      perPage: 10,
+      loading: false,
+      usuarioSeleccionado: null,
+      _debounce: null
+    }
   },
   computed: {
-    claseInput() {
-      return (campo) => {
-        if (this.errores[campo]) return 'input-error';
-        if (this.usuario[campo] && !this.errores[campo]) return 'input-ok';
-        return '';
-      };
+    indexBase() {
+      return (this.page - 1) * this.perPage + 1
     }
   },
   methods: {
-    validarFormulario() {
-      this.errores = {};
-      if (!this.usuario.nombre) this.errores.nombre = "El nombre es obligatorio.";
-      if (!this.usuario.apellido) this.errores.apellido = "El apellido es obligatorio.";
-      if (!this.usuario.dni || this.usuario.dni.length !== 8) this.errores.dni = "El DNI debe tener 8 dígitos.";
-      if (!this.usuario.correo.includes('@')) this.errores.correo = "Correo no válido.";
-      if (!this.usuario.fecha_nacimiento) this.errores.fecha_nacimiento = "Debe ingresar una fecha de nacimiento.";
-      if (!this.usuario.rol) this.errores.rol = "Seleccione un rol.";
-      return Object.keys(this.errores).length === 0;
-    },
-    guardarUsuario() {
-      this.cargando = true;
-      if (this.validarFormulario()) {
-        setTimeout(() => {
-          if (this.editando) {
-            this.usuarios.splice(this.indiceEditar, 1, { ...this.usuario });
-            this.editando = false;
-            Swal.fire({ icon: 'success', title: 'Usuario actualizado', text: 'Los datos del usuario han sido modificados correctamente.' });
-          } else {
-            this.usuarios.push({ ...this.usuario });
-            Swal.fire({ icon: 'success', title: 'Usuario registrado', text: 'El nuevo usuario ha sido guardado exitosamente.' });
-          }
-          this.usuario = { nombre: '', apellido: '', dni: '', correo: '', telefono: '', direccion: '', fecha_nacimiento: '', rol: '' };
-          this.errores = {};
-          this.cargando = false;
-        }, 1000);
-      } else {
-        this.cargando = false;
-        Swal.fire({ icon: 'error', title: 'Errores en el formulario', text: 'Por favor, corrige los errores antes de continuar.' });
+    async cargar() {
+      this.loading = true
+      try {
+        const { items, pagination } = await listUsuarios({
+          q: this.busqueda,
+          page: this.page,
+          perPage: this.perPage
+        })
+        this.usuarios = (items || []).map(u => ({ estado: 'activo', ...u }))
+        this.pagination = pagination || {
+          current_page: this.page,
+          per_page: this.perPage,
+          total: this.usuarios.length,
+          last_page: 1
+        }
+      } finally {
+        this.loading = false
       }
     },
-    editarUsuario(index) {
-      this.usuario = { ...this.usuarios[index] };
-      this.editando = true;
-      this.indiceEditar = index;
+    go(p) {
+      this.page = Math.max(1, p)
+      this.cargar()
     },
-    eliminarUsuario(index) {
-      Swal.fire({
-        title: '¿Estás seguro?',
-        text: 'Esta acción eliminará al usuario de forma permanente.',
+    async verUsuario(usuario) {
+      const detail = await getUsuario(usuario.id)
+      this.usuarioSeleccionado = detail
+    },
+    editarUsuario(usuario) {
+      localStorage.setItem('usuarioEdicion', JSON.stringify(usuario))
+      this.$router.push({ name: 'RegistroUsuarios' })
+    },
+    async eliminarUsuario(usuario) {
+      const res = await Swal.fire({
+        title: '¿Eliminar usuario?',
+        text: `${usuario.nombre} ${usuario.apellido}`,
         icon: 'warning',
         showCancelButton: true,
-        confirmButtonText: 'Sí, eliminar',
-        cancelButtonText: 'Cancelar'
-      }).then((result) => {
-        if (result.isConfirmed) {
-          this.cargando = true;
-          setTimeout(() => {
-            this.usuarios.splice(index, 1);
-            this.cargando = false;
-            Swal.fire({ icon: 'success', title: 'Usuario eliminado', text: 'El usuario ha sido eliminado correctamente.' });
-          }, 1000);
-        }
-      });
+        confirmButtonColor: '#e74c3c',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Sí, eliminar'
+      })
+      if (!res.isConfirmed) return
+      await deleteUsuario(usuario.id)
+      await this.cargar()
+      Swal.fire('Eliminado', 'El usuario ha sido eliminado.', 'success')
+    },
+    estadoTexto(v) {
+      const s = String(v || 'activo').toLowerCase()
+      if (s === 'inactivo') return 'Inactivo'
+      if (s === 'suspendido') return 'Suspendido'
+      return 'Activo'
+    },
+    badgeClase(v) {
+      const s = String(v || 'activo').toLowerCase()
+      return {
+        'badge--activo': s === 'activo',
+        'badge--inactivo': s === 'inactivo',
+        'badge--suspendido': s === 'suspendido'
+      }
+    }
+  },
+  mounted() {
+    this.cargar()
+  },
+  watch: {
+    busqueda() {
+      clearTimeout(this._debounce)
+      this._debounce = setTimeout(() => {
+        this.page = 1
+        this.cargar()
+      }, 350)
     }
   }
-};
+}
 </script>
 
 <style scoped>
-.container {
-  max-width: 720px;
-  margin: 40px auto;
-  background: #ffffff;
-  padding: 2rem;
-  border-radius: 12px;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
-}
+/* Layout base */
+.contenedor{padding:16px;position:relative;color:#cfd3dc;background:#1e1e2f;min-height:100vh}
+.encabezado{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.acciones-top{display:flex;align-items:center;gap:8px}
+.buscador{min-width:260px;padding:8px 10px;border:1px solid #2b2f3a;border-radius:6px;background:#151722;color:#cfd3dc}
+.btn,.btn-nuevo{padding:8px 12px;border-radius:6px;border:1px solid #0d6efd;color:#0d6efd;background:transparent;cursor:pointer;text-decoration:none}
+.btn:hover,.btn-nuevo:hover{background:#0d6efd;color:#fff}
 
-h1 {
-  text-align: center;
-  font-size: 2rem;
-  color: #2c3e50;
-  margin-bottom: 1.5rem;
-}
+/* Tabla (oscura, igual Proveedores) */
+.tabla-wrap{background:#1a1d2b;border-radius:6px;overflow:hidden}
+.tabla{width:100%;border-collapse:collapse}
+.tabla th,.tabla td{border-bottom:1px solid #2b2f3a;padding:10px}
+.tabla thead th{background:#007b8a;color:#fff;text-align:left}
+.text-center{text-align:center}
 
-.toast {
-  position: fixed;
-  top: 20px;
-  right: 30px;
-  padding: 12px 20px;
-  border-radius: 8px;
-  color: white;
-  font-weight: 500;
-  z-index: 1000;
-}
-.toast.success {
-  background-color: #2ecc71;
-}
+/* Acciones */
+.acciones{display:flex;gap:6px;align-items:center}
+.acciones button,.acciones .link-boton{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:6px;cursor:pointer;text-decoration:none}
+.ver{background:#0dcaf0;border:none;color:#0b2a2f}
+.editar{background:#ffc107;border:none;color:#1b1f2a}
+.eliminar{background:#dc3545;border:none;color:#fff}
 
-.form {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
+/* Badges de estado (mismo estilo que Proveedores) */
+.badge{display:inline-block;padding:4px 10px;border-radius:999px;font-size:.8rem;font-weight:600}
+.badge--activo{background:#d1fae5;color:#065f46}
+.badge--inactivo{background:#fee2e2;color:#991b1b}
+.badge--suspendido{background:#fef3c7;color:#92400e}
 
-.input-icon {
-  display: flex;
-  align-items: center;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  background-color: #f9f9f9;
-  padding: 0.5rem;
-}
+/* Paginación */
+.pager{display:flex;justify-content:flex-end;align-items:center;gap:10px;margin-top:12px}
+.btn-pager{background:#2c2f48;color:#fff;border:none;padding:6px 10px;border-radius:6px}
 
-.input-icon .icon {
-  margin-right: 0.6rem;
-  font-size: 1.2rem;
-  color: #2980b9;
+/* Modal con scroll y header pegajoso */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:grid;place-items:center;z-index:9999}
+.modal-contenido{
+  background:#fff;color:#111;border-radius:12px;
+  width:min(620px, 92vw);
+  max-height:min(80vh, 680px);
+  overflow:auto;
+  padding:16px;
+  box-shadow:0 10px 30px rgba(0,0,0,.25);
 }
-
-.input-icon input,
-.input-icon select {
-  flex: 1;
-  border: none;
-  outline: none;
-  font-size: 1rem;
-  background-color: transparent;
-  padding: 0.5rem 0;
+.modal-contenido h4{
+  position:sticky;top:0;z-index:1;
+  margin:0 0 10px 0;padding:8px 0;
+  background:#fff;border-bottom:1px solid #e9ecef;
 }
-
-.input-error {
-  border: 1px solid #e74c3c !important;
-  background-color: #fef0f0 !important;
-}
-
-.input-ok {
-  border: 1px solid #2ecc71 !important;
-  background-color: #f0fdf4 !important;
-}
-
-.btn-submit {
-  background-color: #16a085;
-  color: white;
-  border: none;
-  padding: 0.9rem;
-  border-radius: 6px;
-  font-size: 1rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background 0.3s ease;
-}
-.btn-submit:hover {
-  background-color: #12876f;
-}
-
-.list {
-  margin-top: 2rem;
-}
-.list h2 {
-  font-size: 1.3rem;
-  margin-bottom: 1rem;
-  color: #34495e;
-}
-.list ul {
-  list-style: none;
-  padding: 0;
-}
-.list li {
-  background-color: #ecf0f1;
-  padding: 1rem;
-  border-radius: 6px;
-  margin-bottom: 0.8rem;
-}
-
-.edit,
-.delete {
-  margin-right: 10px;
-  border: none;
-  background: transparent;
-  font-size: 1.2rem;
-  cursor: pointer;
-}
-.edit:hover { color: #2980b9; }
-.delete:hover { color: #e74c3c; }
-
-.error-msg {
-  color: #e74c3c;
-  font-size: 0.875rem;
-  margin-top: -0.6rem;
-  margin-bottom: 0.6rem;
-}
+.tabla-detalle{width:100%;border-collapse:separate;border-spacing:0 6px}
+.tabla-detalle td{padding:2px 6px;vertical-align:top}
+.tabla-detalle td:first-child{white-space:nowrap;width:46%}
+.acciones-modal{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
 </style>

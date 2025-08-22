@@ -1,448 +1,392 @@
+<!-- src/modules/tours/Tours.vue -->
 <template>
-  <div class="tours-container">
-    <h2><i class="bi bi-map"></i> Registro de Tours</h2>
+  <div class="contenedor">
+    <!-- Header -->
+    <div class="encabezado">
+      <h2><i class="bi bi-airplane-engines-fill"></i> Lista de Tours</h2>
 
-    <!-- Alerta tipo Toast -->
-    <div v-if="toastMsg" class="toast">{{ toastMsg }}</div>
-
-    <form @submit.prevent="guardarTour" class="formulario">
-      <div class="mb-3">
-        <label class="form-label">Nombre del Tour</label>
-        <div class="input-group">
-          <span class="input-group-text"><i class="bi bi-signpost-2"></i></span>
-          <input
-            type="text"
-            v-model="tour.nombre"
-            class="form-control"
-            :class="{ 'is-invalid': errores.nombre }"
-            placeholder="Nombre del tour"
-          />
-        </div>
-        <div class="invalid-feedback" v-if="errores.nombre">{{ errores.nombre }}</div>
-      </div>
-
-      <div class="mb-3">
-        <label class="form-label">Ciudad</label>
-        <div class="input-group">
-          <span class="input-group-text"><i class="bi bi-geo-alt"></i></span>
-          <input
-            type="text"
-            v-model="tour.ciudad"
-            class="form-control"
-            :class="{ 'is-invalid': errores.ciudad }"
-            placeholder="Ciudad destino"
-          />
-        </div>
-        <div class="invalid-feedback" v-if="errores.ciudad">{{ errores.ciudad }}</div>
-      </div>
-
-      <div class="mb-3">
-        <label class="form-label">Descripción</label>
-        <textarea
-          class="form-control"
-          v-model="tour.descripcion"
-          placeholder="Descripción del tour"
-          :class="{ 'is-invalid': errores.descripcion }"
-        ></textarea>
-        <div class="invalid-feedback" v-if="errores.descripcion">{{ errores.descripcion }}</div>
-      </div>
-
-      <div class="row g-3 mb-3">
-        <div class="col-md-6">
-          <label class="form-label">Fecha</label>
-          <input
-            type="date"
-            v-model="tour.fecha"
-            class="form-control"
-            :class="{ 'is-invalid': errores.fecha }"
-          />
-          <div class="invalid-feedback" v-if="errores.fecha">{{ errores.fecha }}</div>
-        </div>
-        <div class="col-md-6">
-          <label class="form-label">Precio por persona</label>
-          <input
-            type="number"
-            v-model.number="tour.precio"
-            class="form-control"
-            placeholder="Precio"
-            :class="{ 'is-invalid': errores.precio }"
-          />
-          <div class="invalid-feedback" v-if="errores.precio">{{ errores.precio }}</div>
-        </div>
-      </div>
-
-      <div class="mb-3">
-        <label class="form-label">Duración</label>
+      <div class="acciones-top">
         <input
-          type="text"
-          v-model="tour.duracion"
-          class="form-control"
-          placeholder="Ej: 4 horas, 1 día"
+          v-model="busqueda"
+          class="buscador"
+          placeholder="Buscar tour…"
+          @keyup.enter.prevent="irPagina(1)"
         />
+        <button type="button" class="btn" :disabled="isLoading" @click="cargarTours">
+          <i class="bi bi-arrow-clockwise"></i> Recargar
+        </button>
+        <button type="button" class="btn-nuevo" @click="irCrear">
+          <i class="bi bi-plus-circle"></i> Nuevo Tour
+        </button>
       </div>
+    </div>
 
-      <div class="mb-3">
-        <label class="form-label">Horario</label>
-        <input
-          type="text"
-          v-model="tour.horario"
-          class="form-control"
-          placeholder="Ej: 08:00 - 12:00"
-        />
-      </div>
+    <!-- Tabla -->
+    <div class="tabla-wrap" v-if="toursFiltrados.length">
+      <table class="tabla">
+        <thead>
+          <tr>
+            <th style="width:60px">#</th>
+            <th>Nombre</th>
+            <th>Destino</th>
+            <th>Horario</th>
+            <th>Precio</th>
+            <th style="width:120px">Estado</th>
+            <th style="width:160px">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="(tour, index) in toursFiltrados" :key="tour.id ?? index">
+            <td>{{ index + 1 + (page - 1) * perPage }}</td>
 
-      <div class="mb-3">
-        <label class="form-label">¿Qué incluye?</label>
-        <div class="form-check" v-for="item in incluyeOpciones" :key="item">
-          <input class="form-check-input" type="checkbox" :value="item" v-model="tour.incluye" />
-          <label class="form-check-label">{{ item }}</label>
+            <td>{{ tour.nombre || tour.nombre_tour || '—' }}</td>
+
+            <td>{{ tour.destino_nombre || tour.destino?.nombre || tour.ciudad || '—' }}</td>
+
+            <td>
+              <span v-if="tour.hora_inicio || tour.hora_fin">
+                {{ fmtHora(tour.hora_inicio) }}
+                <span v-if="tour.hora_inicio && tour.hora_fin"> - </span>
+                {{ fmtHora(tour.hora_fin) }}
+              </span>
+              <span v-else>—</span>
+            </td>
+
+            <td>{{ fmtMoneda(tour.precio) }}</td>
+
+            <td>
+              <span class="badge" :class="badgeClase(tour.estado)">
+                {{ estadoTexto(tour.estado) }}
+              </span>
+            </td>
+
+            <td class="acciones">
+              <button type="button" class="ver" title="Ver" @click.stop="verTour(tour)">
+                <i class="bi bi-eye-fill"></i>
+              </button>
+              <button type="button" class="editar" title="Editar" @click.stop="editarTour(tour)">
+                <i class="bi bi-pencil-square"></i>
+              </button>
+              <button type="button" class="eliminar" title="Eliminar" @click.stop="eliminarTour(tour)">
+                <i class="bi bi-trash-fill"></i>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Empty -->
+    <div class="empty" v-else>
+      <i class="bi bi-emoji-neutral"></i> No hay tours para mostrar.
+    </div>
+
+    <!-- Paginación -->
+    <div class="pager" v-if="totalPages > 1">
+      <button class="btn-pager" :disabled="page <= 1" @click="irPagina(page - 1)">Anterior</button>
+      <span>Página {{ page }} / {{ totalPages }}</span>
+      <button class="btn-pager" :disabled="page >= totalPages" @click="irPagina(page + 1)">Siguiente</button>
+
+      <select class="pager-select" :value="perPage" @change="cambiarPerPage($event.target.value)">
+        <option :value="5">5</option>
+        <option :value="10">10</option>
+        <option :value="20">20</option>
+      </select>
+    </div>
+
+    <!-- Modal detalle con scroll -->
+    <div v-if="tourSeleccionado" class="modal-overlay" @click.self="tourSeleccionado = null">
+      <div class="modal-contenido">
+        <h4><i class="bi bi-card-text"></i> Resumen del Tour</h4>
+
+        <table class="tabla-detalle">
+          <tr><td><strong>Código:</strong></td><td>{{ tourSeleccionado.codigo_tour || '—' }}</td></tr>
+          <tr><td><strong>Nombre:</strong></td><td>{{ tourSeleccionado.nombre || tourSeleccionado.nombre_tour || '—' }}</td></tr>
+          <tr><td><strong>Tipo de tour:</strong></td><td>{{ fmtTipo(tourSeleccionado.tipo_tour) }}</td></tr>
+          <tr><td><strong>Destino:</strong></td><td>{{ tourSeleccionado.destino_nombre || tourSeleccionado.destino?.nombre || '—' }}</td></tr>
+          <tr><td><strong>Proveedor:</strong></td><td>{{ tourSeleccionado.proveedor_nombre || '—' }}</td></tr>
+          <tr>
+            <td><strong>Horario:</strong></td>
+            <td>
+              <span v-if="tourSeleccionado.hora_inicio || tourSeleccionado.hora_fin">
+                {{ fmtHora(tourSeleccionado.hora_inicio) }}
+                <span v-if="tourSeleccionado.hora_inicio && tourSeleccionado.hora_fin"> - </span>
+                {{ fmtHora(tourSeleccionado.hora_fin) }}
+              </span>
+              <span v-else>—</span>
+            </td>
+          </tr>
+          <tr><td><strong>Duración:</strong></td><td>{{ (tourSeleccionado.duracion_dias ?? 0) }} día(s) / {{ (tourSeleccionado.duracion_horas ?? 0) }} hora(s)</td></tr>
+          <tr><td><strong>Precio base:</strong></td><td>{{ fmtMoneda(tourSeleccionado.precio_base) }}</td></tr>
+          <tr><td><strong>Precio por persona:</strong></td><td>{{ fmtMoneda(tourSeleccionado.precio_por_persona ?? tourSeleccionado.precio) }}</td></tr>
+          <tr>
+            <td><strong>Capacidad:</strong></td>
+            <td>
+              <span v-if="tourSeleccionado.capacidad_maxima != null">Máx: {{ tourSeleccionado.capacidad_maxima }}</span>
+              <span v-if="tourSeleccionado.capacidad_minima != null" style="margin-left:8px">Mín: {{ tourSeleccionado.capacidad_minima }}</span>
+              <span v-if="tourSeleccionado.capacidad_maxima == null && tourSeleccionado.capacidad_minima == null">No registrada</span>
+            </td>
+          </tr>
+          <tr><td><strong>Edad mínima:</strong></td><td>{{ tourSeleccionado.edad_minima ?? 0 }}</td></tr>
+          <tr><td><strong>Dificultad:</strong></td><td>{{ fmtCap(tourSeleccionado.dificultad) }}</td></tr>
+          <tr>
+            <td><strong>Días de operación:</strong></td>
+            <td>
+              <ul v-if="tourSeleccionado.dias_operativos?.length">
+                <li v-for="(d,i) in mapDiasBonitos(tourSeleccionado.dias_operativos)" :key="i">{{ d }}</li>
+              </ul>
+              <span v-else>No definidos</span>
+            </td>
+          </tr>
+          <tr>
+            <td><strong>Incluye:</strong></td>
+            <td>
+              <ul v-if="tourSeleccionado.incluye?.length"><li v-for="(it,i) in tourSeleccionado.incluye" :key="i">{{ it }}</li></ul>
+              <span v-else>No especificado</span>
+            </td>
+          </tr>
+          <tr>
+            <td><strong>No incluye:</strong></td>
+            <td>
+              <ul v-if="tourSeleccionado.no_incluye?.length"><li v-for="(it,i) in tourSeleccionado.no_incluye" :key="i">{{ it }}</li></ul>
+              <span v-else>No especificado</span>
+            </td>
+          </tr>
+          <tr>
+            <td><strong>Itinerario:</strong></td>
+            <td>
+              <ol v-if="tourSeleccionado.itinerario?.length"><li v-for="(it,i) in tourSeleccionado.itinerario" :key="i">{{ it }}</li></ol>
+              <span v-else>No especificado</span>
+            </td>
+          </tr>
+          <tr><td><strong>Observaciones:</strong></td><td>{{ tourSeleccionado.observaciones || 'Ninguna' }}</td></tr>
+          <tr>
+            <td><strong>Estado:</strong></td>
+            <td>
+              <span class="badge" :class="badgeClase(tourSeleccionado.estado)">
+                {{ estadoTexto(tourSeleccionado.estado) }}
+              </span>
+            </td>
+          </tr>
+        </table>
+
+        <div class="acciones-modal">
+          <button type="button" class="btn" @click="tourSeleccionado = null">Cerrar</button>
         </div>
       </div>
-
-      <div class="mb-3">
-        <label class="form-label">Capacidad</label>
-        <input
-          type="number"
-          min="1"
-          v-model.number="tour.capacidad"
-          class="form-control"
-          placeholder="Capacidad máxima"
-        />
-      </div>
-
-      <div class="mb-3">
-        <label class="form-label">Días de operación</label>
-        <div class="form-check form-check-inline" v-for="dia in diasSemana" :key="dia.valor">
-          <input class="form-check-input" type="checkbox" :value="dia.valor" v-model="tour.diasOperacion" />
-          <label class="form-check-label">{{ dia.label }}</label>
-        </div>
-      </div>
-
-      <div class="mb-3">
-        <label class="form-label">Observaciones</label>
-        <textarea
-          class="form-control"
-          v-model="tour.observaciones"
-          placeholder="Condiciones especiales (opcional)"
-        ></textarea>
-      </div>
-
-      <button type="submit" class="btn btn-success">
-        <i class="bi bi-save"></i>
-        {{ editando ? 'Actualizar Tour' : 'Registrar Tour' }}
-      </button>
-    </form>
-
-    <div v-if="tours.length" class="mt-5">
-      <h4><i class="bi bi-list-check"></i> Tours Registrados</h4>
-      <ul class="list-group mt-3">
-        <li class="list-group-item" v-for="(t, i) in tours" :key="i">
-          <div class="d-flex justify-content-between">
-            <div>
-              <strong>{{ t.nombre }}</strong> – {{ t.ciudad }} – {{ t.fecha }} – S/ {{ t.precio }}
-              <p class="mb-1 text-muted small">{{ t.descripcion }}</p>
-            </div>
-            <div>
-              <button class="btn btn-sm btn-outline-primary me-2" @click="editarTour(i)"><i class="bi bi-pencil"></i></button>
-              <button class="btn btn-sm btn-outline-danger" @click="eliminarTour(i)"><i class="bi bi-trash"></i></button>
-            </div>
-          </div>
-        </li>
-      </ul>
     </div>
   </div>
 </template>
 
 <script>
-import Swal from 'sweetalert2';
-import Loading from 'vue-loading-overlay';
+import Swal from 'sweetalert2'
+import { listTours, deleteTour } from '@/services/tours'
+
+const asArray = (v) => {
+  if (Array.isArray(v)) return v
+  if (v == null || v === '') return []
+  if (typeof v === 'string') {
+    try { const parsed = JSON.parse(v); return Array.isArray(parsed) ? parsed : (parsed ? [parsed] : []) }
+    catch { return [v] }
+  }
+  return [v]
+}
+
+const DAY_NAMES = { lun:'Lunes', mar:'Martes', mie:'Miércoles', jue:'Jueves', vie:'Viernes', sab:'Sábado', dom:'Domingo' }
+const mapDiasBonitos = (arr) => asArray(arr).map(d => DAY_NAMES[String(d).toLowerCase()] || d)
+
+const normalizeItem = (t) => {
+  const raw = t._raw || t
+  const proveedorNombre = raw.proveedor?.razon_social || raw.proveedor?.nombre_comercial || raw.proveedor?.nombre || t.proveedor || ''
+  return {
+    id: t.id ?? raw.id,
+    nombre: t.nombre || raw.nombre_tour || '',
+    nombre_tour: raw.nombre_tour || t.nombre || '',
+    codigo_tour: raw.codigo_tour || t.codigo || '',
+    destino_nombre: t.destino || raw.destino?.nombre || '',
+    destino: raw.destino || null,
+    proveedor_nombre: proveedorNombre,
+    hora_inicio: t.hora_inicio ?? raw.hora_inicio ?? null,
+    hora_fin: t.hora_fin ?? raw.hora_fin ?? null,
+    tipo_tour: raw.tipo_tour || t.tipo || 'full_day',
+    duracion_dias: raw.duracion_dias ?? 0,
+    duracion_horas: raw.duracion_horas ?? 0,
+    precio_base: raw.precio_base ?? null,
+    precio_por_persona: raw.precio_por_persona ?? null,
+    precio: t.precio ?? raw.precio_por_persona ?? raw.precio_base ?? 0,
+    capacidad_maxima: raw.capacidad_maxima ?? null,
+    capacidad_minima: raw.capacidad_minima ?? null,
+    edad_minima: raw.edad_minima ?? 0,
+    dificultad: raw.dificultad || 'facil',
+    incluye: asArray(raw.incluye),
+    no_incluye: asArray(raw.no_incluye),
+    dias_operativos: asArray(raw.dias_operativos),
+    itinerario: asArray(raw.itinerario),
+    observaciones: raw.observaciones || '',
+    estado: raw.estado || t.estado || 'activo',
+    _raw: raw
+  }
+}
 
 export default {
-  components: { Loading },
-  data() {
+  data () {
     return {
-      isLoading: false,
-      tour: {
-        nombre: '', ciudad: '', descripcion: '', fecha: '', precio: null,
-        duracion: '', horario: '', incluye: [], capacidad: null,
-        diasOperacion: [], observaciones: ''
-      },
+      busqueda: '',
       tours: [],
-      editando: false,
-      indexEditar: null,
-      errores: {},
-      incluyeOpciones: ['Almuerzo', 'Guía', 'Transporte', 'Entradas', 'Seguro', 'Snacks', 'Bebidas'],
-      diasSemana: [
-        { label: 'L', valor: 'Lunes' }, { label: 'M', valor: 'Martes' },
-        { label: 'M', valor: 'Miércoles' }, { label: 'J', valor: 'Jueves' },
-        { label: 'V', valor: 'Viernes' }, { label: 'S', valor: 'Sábado' },
-        { label: 'D', valor: 'Domingo' }
-      ]
-    };
-  },
-  mounted() {
-    const guardados = localStorage.getItem('tours');
-    if (guardados) {
-      this.tours = JSON.parse(guardados);
+      tourSeleccionado: null,
+      page: 1,
+      perPage: 10,
+      total: 0,
+      isLoading: false,
+      _searchTimer: null
     }
   },
-  watch: {
-    tours: {
-      handler(nuevo) {
-        localStorage.setItem('tours', JSON.stringify(nuevo));
-      },
-      deep: true
-    }
+  computed: {
+    toursFiltrados () {
+      const q = this.busqueda.trim().toLowerCase()
+      if (!q) return this.tours
+      return this.tours.filter(t =>
+        (t.nombre || t.nombre_tour || '').toLowerCase().includes(q) ||
+        (t.destino_nombre || '').toLowerCase().includes(q) ||
+        (t.codigo_tour || '').toLowerCase().includes(q)
+      )
+    },
+    totalPages () { return Math.max(1, Math.ceil(this.total / this.perPage)) }
   },
   methods: {
-    validarFormulario() {
-      this.errores = {};
-      if (!this.tour.nombre) this.errores.nombre = "El nombre es obligatorio.";
-      if (!this.tour.ciudad) this.errores.ciudad = "La ciudad es obligatoria.";
-      if (!this.tour.descripcion) this.errores.descripcion = "La descripción es obligatoria.";
-      if (!this.tour.fecha) this.errores.fecha = "Debe seleccionar una fecha.";
-      if (!this.tour.precio || this.tour.precio <= 0) this.errores.precio = "Ingrese un precio válido.";
-      return Object.keys(this.errores).length === 0;
+    irCrear () { this.$router.push({ name: 'RegistroTour' }) },
+    fmtHora (h) { if (!h) return ''; const [hh='00',mm='00']=String(h).split(':'); return `${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}` },
+    fmtMoneda (n) { const num = Number(n || 0); return `S/ ${num.toFixed(2)}` },
+    fmtCap (s) { if (!s) return ''; const t=String(s).toLowerCase(); return t.charAt(0).toUpperCase()+t.slice(1).replace('_',' ') },
+    fmtTipo (t) {
+      const map={ full_day:'Full day', half_day:'Half day', multi_day:'Multi day', trekking:'Trekking', cultural:'Cultural', aventura:'Aventura', gastronomico:'Gastronómico' }
+      return map[String(t).toLowerCase()] || this.fmtCap(t)
     },
-    async guardarTour() {
-      if (!this.validarFormulario()) {
-        Swal.fire({ icon: 'error', title: 'Formulario incompleto', text: 'Revisa los campos obligatorios.' });
-        return;
-      }
-
-      this.isLoading = true;
-      await new Promise(resolve => setTimeout(resolve, 800));
-
-      if (this.editando) {
-        this.tours[this.indexEditar] = { ...this.tour };
-        this.mostrarAlerta('Tour actualizado', 'El tour fue modificado correctamente.', 'success');
-      } else {
-        this.tours.push({ ...this.tour });
-        this.mostrarAlerta('Tour registrado', 'El tour ha sido guardado exitosamente.', 'success');
-      }
-
-      this.reiniciarFormulario();
-      this.isLoading = false;
+    mapDiasBonitos,
+    // ✅ Ahora incluye "Temporada"
+    estadoTexto(v){
+      const s = String(v || 'activo').toLowerCase()
+      if (s === 'inactivo') return 'Inactivo'
+      if (s === 'suspendido') return 'Suspendido'
+      if (s === 'temporada') return 'Temporada'
+      return 'Activo'
     },
-    async eliminarTour(index) {
-      const confirmacion = await Swal.fire({
-        title: '¿Eliminar este tour?',
-        text: 'Esta acción eliminará el tour permanentemente.',
+    // ✅ Clase visual para "Temporada"
+    badgeClase(v){
+      const s = String(v || 'activo').toLowerCase()
+      return {
+        'badge--activo': s === 'activo',
+        'badge--inactivo': s === 'inactivo',
+        'badge--suspendido': s === 'suspendido',
+        'badge--temporada': s === 'temporada'
+      }
+    },
+    async cargarTours () {
+      try {
+        this.isLoading = true
+        const res = await listTours({ q: this.busqueda, page: this.page, perPage: this.perPage })
+        const rows = Array.isArray(res.items) ? res.items : []
+        this.tours = rows.map(normalizeItem)
+        const p = res.pagination || {}
+        this.total = Number(p.total ?? this.tours.length)
+        this.perPage = Number(p.per_page ?? this.perPage)
+        if (this.page > this.totalPages) this.page = this.totalPages
+      } catch (e) {
+        console.error(e)
+        Swal.fire('Error', 'No se pudo cargar la lista de tours', 'error')
+      } finally {
+        this.isLoading = false
+      }
+    },
+    verTour (t) { this.tourSeleccionado = { ...t } },
+    editarTour (t) { this.$router.push({ name: 'RegistroTour', query: { id: t.id } }) },
+    async eliminarTour (t) {
+      const confirm = await Swal.fire({
+        title: '¿Eliminar tour?',
+        text: 'Esta acción no se puede deshacer.',
         icon: 'warning',
         showCancelButton: true,
         confirmButtonText: 'Sí, eliminar',
         cancelButtonText: 'Cancelar'
-      });
-      if (!confirmacion.isConfirmed) return;
-
-      this.isLoading = true;
-      await new Promise(resolve => setTimeout(resolve, 600));
-
-      this.tours.splice(index, 1);
-      this.mostrarAlerta('Eliminado', 'El tour ha sido eliminado.', 'success');
-
-      if (this.indexEditar === index) this.reiniciarFormulario();
-      this.isLoading = false;
+      })
+      if (!confirm.isConfirmed) return
+      try {
+        await deleteTour(t.id)
+        this.tours = this.tours.filter(x => x.id !== t.id)
+        Swal.fire('Eliminado', 'Tour eliminado con éxito', 'success')
+      } catch (e) {
+        console.error(e)
+        Swal.fire('Error', 'No se pudo eliminar el tour', 'error')
+      }
     },
-    editarTour(index) {
-      this.tour = { ...this.tours[index] };
-      this.editando = true;
-      this.indexEditar = index;
-    },
-    reiniciarFormulario() {
-      this.tour = {
-        nombre: '', ciudad: '', descripcion: '', fecha: '', precio: null,
-        duracion: '', horario: '', incluye: [], capacidad: null,
-        diasOperacion: [], observaciones: ''
-      };
-      this.errores = {};
-      this.editando = false;
-      this.indexEditar = null;
-    },
-    mostrarAlerta(titulo, mensaje, tipo) {
-      Swal.fire({ icon: tipo, title: titulo, text: mensaje });
+    irPagina (p) { const next=Math.min(this.totalPages, Math.max(1,p)); if(next!==this.page){ this.page=next; this.cargarTours() } },
+    cambiarPerPage (n) { this.perPage=Number(n)||10; this.page=1; this.cargarTours() }
+  },
+  async mounted () { await this.cargarTours() },
+  watch: {
+    $route (to, from) { if (from?.name === 'RegistroTour') this.cargarTours() },
+    busqueda () {
+      clearTimeout(this._searchTimer)
+      this._searchTimer = setTimeout(() => { this.page = 1; this.cargarTours() }, 300)
     }
   }
-};
+}
 </script>
 
-
-
 <style scoped>
-.tours-container {
-  max-width: 520px;
-  margin: 38px auto;
-  padding: 28px 18px 22px 18px;
-  background: rgba(255,255,255,0.97);
-  border-radius: 22px;
-  box-shadow: 0 8px 32px rgba(44, 62, 80, 0.13), 0 1.5px 8px rgba(26,188,156,0.07);
-  font-family: 'Segoe UI', 'Inter', Arial, sans-serif;
-  border: 1.5px solid rgba(44,62,80,0.08);
-}
+/* Layout base */
+.contenedor{padding:16px;background:#1e1e2f;min-height:100vh;color:#cfd3dc}
+.encabezado{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.acciones-top{display:flex;align-items:center;gap:8px}
+.buscador{min-width:260px;padding:8px 10px;border:1px solid #2b2f3a;border-radius:6px;background:#151722;color:#cfd3dc}
+.btn,.btn-nuevo{padding:8px 12px;border-radius:6px;border:1px solid #0d6efd;color:#0d6efd;background:transparent;cursor:pointer;text-decoration:none}
+.btn:hover,.btn-nuevo:hover{background:#0d6efd;color:#fff}
 
-.tours-container h2 {
-  text-align: center;
-  color: #16a085;
-  margin-bottom: 18px;
-  font-size: 1.5rem;
-  font-weight: 800;
-  letter-spacing: 1px;
-  text-shadow: 0 2px 12px rgba(26,188,156,0.08);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
+/* Tabla */
+.tabla-wrap{background:#1a1d2b;border-radius:6px;overflow:hidden}
+.tabla{width:100%;border-collapse:collapse}
+.tabla th,.tabla td{border-bottom:1px solid #2b2f3a;padding:10px}
+.tabla thead th{background:#007b8a;color:#fff;text-align:left}
 
-.formulario label {
-  font-weight: 600;
-  color: #16a085;
-  margin-bottom: 4px;
-  font-size: 1rem;
-}
+/* Badges de estado */
+.badge{display:inline-block;padding:4px 10px;border-radius:999px;font-size:.8rem;font-weight:600}
+.badge--activo{background:#d1fae5;color:#065f46}
+.badge--inactivo{background:#fee2e2;color:#991b1b}
+.badge--suspendido{background:#fef3c7;color:#92400e}
+/* ✅ Nuevo estilo para "Temporada" */
+.badge--temporada{background:#dbeafe;color:#1e40af}
 
-.input-group-text {
-  background: #eafaf1;
-  border: none;
-  color: #16a085;
-  font-size: 1.1rem;
-}
+/* Acciones */
+.acciones{display:flex;gap:6px;align-items:center}
+.acciones button{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:6px;cursor:pointer;border:none}
+.ver{background:#0dcaf0;color:#0b2a2f}
+.editar{background:#ffc107;color:#1b1f2a}
+.eliminar{background:#dc3545;color:#fff}
 
-.form-control, .form-select {
-  border-radius: 8px;
-  border: 1.3px solid #e1e8ed;
-  font-size: 1rem;
-  background: rgba(250,250,250,0.99);
-  transition: border-color 0.22s, box-shadow 0.22s;
-  box-shadow: 0 1px 4px rgba(44,62,80,0.04);
-  color: #2c3e50;
-  outline: none;
-  min-height: 36px;
-}
+.empty{margin-top:16px;color:#8a90a2}
 
-.form-control:focus, .form-select:focus {
-  border-color: #16a085;
-  background: #fff;
-}
+/* Paginación */
+.pager{display:flex;justify-content:flex-end;align-items:center;gap:10px;margin-top:12px}
+.btn-pager{background:#2c2f48;color:#fff;border:none;padding:6px 10px;border-radius:6px}
+.pager-select{background:#151722;color:#cfd3dc;border:1px solid #2b2f3a;border-radius:6px;padding:6px 8px}
 
-textarea.form-control {
-  min-height: 38px;
-  resize: vertical;
-  padding-top: 10px;
-  padding-bottom: 10px;
+/* Modal con scroll y header pegajoso */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:grid;place-items:center;z-index:9999}
+.modal-contenido{
+  background:#fff;color:#111;border-radius:12px;
+  width:min(780px, 92vw);
+  max-height:min(80vh, 680px);
+  overflow:auto;
+  padding:16px;
+  box-shadow:0 10px 30px rgba(0,0,0,.25);
 }
-
-.invalid-feedback {
-  color: #e74c3c;
-  font-size: 0.97em;
-  margin-top: 2px;
+.modal-contenido h4{
+  position:sticky;top:0;z-index:1;
+  margin:0 0 10px 0;padding:8px 0;
+  background:#fff;border-bottom:1px solid #e9ecef;
 }
-
-.btn-success {
-  background: linear-gradient(90deg, #1abc9c 60%, #16a085 100%);
-  border: none;
-  border-radius: 9px;
-  font-size: 1.08rem;
-  font-weight: 700;
-  color: #fff;
-  box-shadow: 0 2px 12px rgba(26,188,156,0.11);
-  letter-spacing: 0.5px;
-  cursor: pointer;
-  transition: background 0.18s, transform 0.13s, box-shadow 0.18s;
-  width: 100%;
-  margin-top: 16px;
-  padding: 12px 0;
-}
-.btn-success:hover {
-  background: linear-gradient(90deg, #16a085 60%, #1abc9c 100%);
-  transform: translateY(-2px) scale(1.03);
-  box-shadow: 0 6px 18px rgba(26,188,156,0.18);
-}
-
-.form-check-input:checked {
-  background-color: #16a085;
-  border-color: #16a085;
-}
-
-.form-check-label {
-  font-size: 0.97rem;
-  color: #34495e;
-}
-
-.mt-5 {
-  margin-top: 2.5rem !important;
-}
-
-.list-group-item {
-  background: rgba(236, 240, 241, 0.92);
-  border-radius: 9px !important;
-  font-size: 1rem;
-  margin-bottom: 0.8rem;
-  position: relative;
-  box-shadow: 0 1px 4px rgba(44,62,80,0.04);
-  border: 1px solid #e1e8ed !important;
-  padding: 0.7rem 0.8rem 0.7rem 0.8rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.list-group-item strong {
-  color: #16a085;
-  font-weight: 700;
-}
-
-.list-group-item .text-muted {
-  color: #7f8c8d !important;
-}
-
-.btn-outline-primary, .btn-outline-danger {
-  border-radius: 7px;
-  font-size: 1.1rem;
-  padding: 2px 10px;
-  transition: background 0.18s, color 0.18s, transform 0.13s;
-}
-.btn-outline-primary:hover {
-  background: #eafaf1;
-  color: #16a085;
-  transform: scale(1.13);
-}
-.btn-outline-danger:hover {
-  background: #fdecea;
-  color: #e74c3c;
-  transform: scale(1.13);
-}
-
-.toast {
-  position: fixed;
-  top: 22px;
-  right: 22px;
-  background: linear-gradient(90deg, #1abc9c 60%, #16a085 100%);
-  color: #fff;
-  padding: 12px 22px;
-  border-radius: 10px;
-  box-shadow: 0 2px 12px rgba(26,188,156,0.13);
-  z-index: 1000;
-  font-size: 1.05em;
-  font-weight: 500;
-  letter-spacing: 0.5px;
-  animation: toastIn 0.4s, fadeInOut 3s ease-in-out;
-}
-@keyframes toastIn {
-  from { opacity: 0; transform: translateY(-20px);}
-  to { opacity: 1; transform: translateY(0);}
-}
-@keyframes fadeInOut {
-  0% { opacity: 0; transform: translateY(-10px); }
-  10% { opacity: 1; transform: translateY(0); }
-  90% { opacity: 1; }
-  100% { opacity: 0; transform: translateY(-10px); }
-}
-
-@media (max-width: 600px) {
-  .tours-container {
-    max-width: 98vw;
-    padding: 10px 2vw 14px 2vw;
-  }
-}
+.tabla-detalle{width:100%;border-collapse:separate;border-spacing:0 6px}
+.tabla-detalle td{padding:2px 6px;vertical-align:top}
+.tabla-detalle td:first-child{white-space:nowrap;width:40%}
+.acciones-modal{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
 </style>

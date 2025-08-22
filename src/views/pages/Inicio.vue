@@ -1,143 +1,341 @@
 <template>
-  <div class="inicio-publico d-flex flex-column align-items-center justify-content-center vh-100 text-center">
-    <img src="https://adventur.pe/wp-content/uploads/2024/04/logo-adventur-2.png" alt="Logo Adventur" class="logo-adventur mb-4" />
-    <h1 class="neon-text mb-3">
-      <i class="bi bi-globe2"></i> Bienvenido a <strong>Adventur Manager</strong>
-    </h1>
-    <p class="lead text-white-50 mb-4">
-      Gestión inteligente de proveedores, hoteles y tours.
-    </p>
+  <div class="inicio-modern">
+    <nav class="navbar">
+      <div class="logo">
+        <img src="https://adventur.pe/wp-content/uploads/2024/04/logo-agencia-turismo-adventur.png" alt="Adventur Logo" class="logo-img" />
+      </div>
+      <ul class="nav-links">
+        <li><router-link to="/nosotros">Nosotros</router-link></li>
+        <li><router-link to="/terminos">Términos</router-link></li>
+        <li><router-link to="/contacto">Contacto</router-link></li>
+        <li><router-link to="/ayuda">Ayuda</router-link></li>
+        <li><router-link to="/privacidad">Privacidad</router-link></li>
+      </ul>
+      <router-link to="/login" class="btn-login">
+        <i class="bi bi-box-arrow-in-right"></i> Iniciar Sesión
+      </router-link>
+    </nav>
 
-    <div class="d-flex gap-3 mb-4 justify-content-center">
-      <router-link to="/login" class="btn btn-primary btn-lg neon-btn px-4">
-        <i class="bi bi-box-arrow-in-right"></i> Iniciar sesión
-      </router-link>
-      <router-link to="/registro" class="btn btn-outline-light btn-lg px-4">
-        <i class="bi bi-person-plus"></i> Crear cuenta
-      </router-link>
+    <header class="hero">
+      <h1 class="hero-title">¡Vive la experiencia Adventur!</h1>
+      <p class="hero-subtitle">Explora, siente y conecta con lo mejor del Perú: historia, naturaleza, cultura y emoción te esperan en cada destino. ¡Comienza tu aventura ahora!</p>
+    </header>
+
+    <div class="slider-container">
+      <div class="slider">
+        <div
+          class="slide"
+          v-for="(destino, index) in destinos"
+          :key="index"
+          :class="{ active: index === activo }"
+        >
+          <img :src="destino.imagen" :alt="destino.nombre" />
+          <div class="texto-slide animate">
+            <h2><i class="bi bi-geo-alt-fill"></i> {{ destino.nombre }}</h2>
+            <p>{{ destino.descripcion }}</p>
+          </div>
+        </div>
+        <button class="control prev" @click="anterior"><i class="bi bi-chevron-left"></i></button>
+        <button class="control next" @click="siguiente"><i class="bi bi-chevron-right"></i></button>
+      </div>
     </div>
 
-    <div class="links-footer text-white-50 small mt-3">
-      <router-link to="/nosotros" class="me-3">Nosotros</router-link>
-      <router-link to="/contacto" class="me-3">Contacto</router-link>
-      <router-link to="/ayuda" class="me-3">Ayuda</router-link>
-      <router-link to="/terminos" class="me-3">Términos</router-link>
-      <router-link to="/privacidad">Privacidad</router-link>
-    </div>
+    <footer class="footer">
+      <p>&copy; 2024 Adventur. Todos los derechos reservados.</p>
+      <div class="links-footer">
+        <a href="https://www.facebook.com/AdventurPeru" target="_blank" rel="noopener noreferrer"><i class="bi bi-facebook"></i> Facebook</a>
+        <a href="https://www.instagram.com/adventurperu/" target="_blank" rel="noopener noreferrer"><i class="bi bi-instagram"></i> Instagram</a>
+        <a href="https://www.twitter.com/AdventurPeru" target="_blank" rel="noopener noreferrer"><i class="bi bi-twitter"></i> Twitter</a>
+        <a href="https://www.youtube.com/@AdventurPeru" target="_ blank" rel="noopener noreferrer"><i class="bi bi-youtube"></i> YouTube</a>
+      </div>
+    </footer>
   </div>
 </template>
 
 <script>
 export default {
-  name: 'Inicio'
-}
+  name: "Inicio",
+  data() {
+    return {
+      activo: 0,
+      interval: null,
+      destinos: [
+        {
+          nombre: "Cusco - Perú",
+          descripcion: "Explora la historia en la capital del imperio inca.",
+          imagen: "https://www.machupicchuterra.com/wp-content/uploads/machu-picchu-presupuesto.jpg",
+        },
+        {
+          nombre: "Amazonía Peruana",
+          descripcion: "Sumérgete en la selva más biodiversa del planeta.",
+          imagen: "https://p4.wallpaperbetter.com/wallpaper/268/607/584/amazon-river-river-amazon-rainforest-rainforest-wallpaper-preview.jpg",
+        },
+        {
+          nombre: "Arequipa - Cañón del Colca",
+          descripcion: "Admira los cóndores y paisajes imponentes.",
+          imagen: "https://www.tuentrada.com.pe/wp-content/uploads/2023/04/Canon-del-Colca.webp",
+        },
+        {
+          nombre: "Máncora - Piura",
+          descripcion: "Relájate en las playas más cálidas del norte.",
+          imagen: "https://pasosdeviajero.com/wp-content/uploads/paraiso-de-sol-y-bellas-playas.jpg",
+        },
+        {
+          nombre: "Cordillera Blanca - Huaraz",
+          descripcion: "Aventura entre lagunas y nevados majestuosos.",
+          imagen: "https://highsummitperu.com/wp-content/uploads/2022/03/47.jpg",
+        },
+      ],
+    };
+  },
+  mounted() {
+    this.interval = setInterval(() => {
+      this.siguiente();
+    }, 6000);
+  },
+  beforeUnmount() {
+    clearInterval(this.interval);
+  },
+  methods: {
+    siguiente() {
+      this.activo = (this.activo + 1) % this.destinos.length;
+    },
+    anterior() {
+      this.activo = (this.activo - 1 + this.destinos.length) % this.destinos.length;
+    },
+  },
+};
 </script>
-
 <style scoped>
-.inicio-publico {
-  background: url('https://img3.wallspic.com/previews/5/1/7/5/7/175715/175715-el_parque_nacional_los_glaciares-dos_medicine_lake-lago_de_avalancha-montana_reynolds-el_lago_mcdonald-550x310.jpg') center center/cover no-repeat;
-  color: #fff;
-  padding: 2rem;
+.inicio-modern {
   min-height: 100vh;
-  position: relative;
+  background: url("https://img2.wallspic.com/crops/0/2/6/2/7/172620/172620-dolomitas-iglesia_de_san_juan-montana-paisaje_natural-naturaleza-7680x4320.jpg") no-repeat center center fixed;
+  background-size: cover;
+  font-family: 'Poppins', sans-serif;
+  color: #fff;
+  overflow-x: hidden;
+  padding-top: 80px;
 }
 
-.inicio-publico::before {
-  content: "";
+/* NAVBAR */
+.navbar {
+  position: fixed;
+  top: 0;
+  width: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(10px);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  z-index: 1000;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+}
+
+.logo-img {
+  width: 160px;
+  max-height: 100px;
+  object-fit: contain;
+  filter: drop-shadow(2px 4px 6px rgba(0, 0, 0, 0.7));
+  transition: transform 0.3s ease;
+}
+
+.nav-links {
+  display: flex;
+  gap: 1.5rem;
+  list-style: none;
+}
+
+.nav-links li a {
+  color: white;
+  font-weight: 500;
+  font-size: 1rem;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.nav-links li a:hover {
+  color: #00ffe0;
+}
+
+/* === BOTÓN LOGIN === */
+.btn-login {
+  background: linear-gradient(135deg, #00c853, #00e676);
+  color: #fff !important;
+  font-weight: bold;
+  padding: 0.6rem 1.3rem;
+  border-radius: 25px;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  box-shadow: 0 0 14px rgba(0, 230, 118, 0.7);
+}
+.btn-login:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 20px rgba(0, 230, 118, 1);
+}
+
+/* HERO */
+.hero {
+  text-align: center;
+  padding: 6rem 2rem 3rem;
+}
+
+.hero-title {
+  font-size: 2.2rem; /* antes 3rem */
+  font-weight: 700;
+  color: #00f2ff;
+  text-shadow: 2px 2px 10px rgba(0,0,0,0.6);
+  margin-bottom: 0.8rem;
+}
+
+.hero-subtitle {
+  font-size: 1.05rem; /* antes 1.3rem */
+  max-width: 750px;
+  margin: 0 auto;
+  line-height: 1.5;
+  color: #ffffff;
+  text-shadow: 1px 1px 5px rgba(0,0,0,0.5);
+}
+
+
+/* SLIDER */
+.slider-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 2rem;
+}
+
+.slider {
+  position: relative;
+  width: 90%;
+  max-width: 1100px;
+  height: 440px;
+  overflow: hidden;
+  border-radius: 20px;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.slide {
   position: absolute;
-  inset: 0;
-  background: radial-gradient(circle at 50% 40%, #183c4a88 0%, #203a4388 60%, #2c536488 100%);
-  z-index: 0;
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  transition: opacity 1s ease-in-out;
 }
 
-.inicio-publico > * {
-  position: relative;
+.slide.active {
+  opacity: 1;
   z-index: 1;
 }
 
-.logo-adventur {
-  width: 140px;
-  height: auto;
-  margin-bottom: 1.5rem;
-  filter: drop-shadow(0 0 12px #00f7ff88);
-  transition: transform 0.2s;
-}
-.logo-adventur:hover {
-  transform: scale(1.07);
+.slide img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 20px;
 }
 
-.neon-text {
-  color: #00f7ff;
-  text-shadow: 0 0 6px #00f7ff, 0 0 12px #00f7ff, 0 0 24px #00f7ff;
+.texto-slide {
+  position: absolute;
+  bottom: 4%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.55); /* más transparente */
+  padding: 0.7rem 1.5rem; /* menos padding */
+  border-radius: 12px;
+  text-align: center;
+  color: #fff;
+  max-width: 85%;
+  backdrop-filter: blur(4px); /* difuminado moderno */
+  box-shadow: 0 0 8px rgba(0,0,0,0.4);
 }
 
-/* BOTÓN NEÓN PRINCIPAL */
-.neon-btn {
-  background: linear-gradient(135deg, #00f7ff, #0072ff);
-  color: #fff !important;
+.texto-slide h2 {
+  font-size: 1.2rem; /* antes 1.5rem */
+  color: #00e6e6;
+  margin-bottom: 0.4rem;
+  font-weight: 600;
+  text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+}
+
+.texto-slide p {
+  font-size: 0.95rem; /* antes 1rem */
+  color: #f1f1f1;
+}
+
+
+/* CONTROLES SLIDER */
+.control {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(0, 0, 0, 0.6);
   border: none;
-  border-radius: 50px;
-  padding: 0.85rem 2.8rem;
-  font-size: 1.2rem;
-  font-weight: bold;
-  letter-spacing: 0.7px;
-  text-transform: uppercase;
-  box-shadow: 0 0 10px #00f7ff55, 0 0 25px #00f7ff88, inset 0 0 6px #00f7ff44;
-  transition: all 0.3s ease-in-out;
-}
-.neon-btn:hover,
-.neon-btn:focus {
-  background: linear-gradient(135deg, #0072ff, #00f7ff);
-  box-shadow: 0 0 15px #00f7ff99, 0 0 30px #00f7ffcc, inset 0 0 8px #00f7ff66;
-  transform: scale(1.05) translateY(-2px);
+  font-size: 1.5rem;
+  padding: 0.6rem;
+  border-radius: 50%;
+  color: white;
+  cursor: pointer;
+  z-index: 2;
 }
 
-/* BOTÓN CONTORNO CON ESTILO NEÓN */
-.btn-outline-light {
-  background: transparent;
-  border: 2px solid #00f7ff;
-  color: #00f7ff !important;
-  border-radius: 50px;
-  padding: 0.85rem 2.8rem;
-  font-size: 1.2rem;
-  font-weight: bold;
-  letter-spacing: 0.7px;
-  text-transform: uppercase;
-  box-shadow: 0 0 12px #00f7ff33;
-  transition: all 0.3s ease-in-out;
-}
-.btn-outline-light:hover,
-.btn-outline-light:focus {
-  background: #00f7ff;
-  color: #203a43 !important;
-  box-shadow: 0 0 18px #00f7ff, 0 0 36px #00f7ff88, inset 0 0 8px #203a43;
-  transform: scale(1.05) translateY(-2px);
+.control:hover {
+  background: rgba(0, 0, 0, 0.8);
 }
 
-/* FOOTER LINKS CON ESTILO NEÓN */
-.links-footer {
-  margin-top: 1.5rem;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 1rem;
+.control.prev {
+  left: 1rem;
 }
-.links-footer .router-link {
-  position: relative;
-  color: #00f7ff !important;
-  font-weight: bold;
-  text-transform: uppercase;
-  letter-spacing: 0.6px;
-  padding: 0.25rem 0.75rem;
-  border-radius: 6px;
+
+.control.next {
+  right: 1rem;
+}
+
+/* FOOTER */
+.footer {
+  background: rgba(0, 0, 0, 0.6);
+  padding: 1.5rem;
+  text-align: center;
+  font-size: 0.9rem;
+  color: #ccc;
+  border-top: 1px solid rgba(255,255,255,0.1);
+  margin-top: 3rem;
+}
+
+.links-footer a {
+  color: #ccc;
+  margin: 0 0.7rem;
   text-decoration: none;
-  box-shadow: 0 0 10px #00f7ff33;
-  transition: all 0.3s ease-in-out;
 }
-.links-footer .router-link:hover {
-  color: #fff !important;
-  background: rgba(0, 247, 255, 0.1);
-  box-shadow: 0 0 16px #00f7ff99;
-  transform: scale(1.05);
+
+.links-footer a:hover {
+  color: #00ffe0;
+}
+
+/* RESPONSIVE */
+@media screen and (max-width: 768px) {
+  .logo-img {
+    width: 120px;
+  }
+
+  .nav-links {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1rem;
+  }
+
+  .hero-title {
+    font-size: 2.2rem;
+  }
+
+  .hero-subtitle {
+    font-size: 1rem;
+  }
 }
 </style>

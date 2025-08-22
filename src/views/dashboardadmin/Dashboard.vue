@@ -1,66 +1,52 @@
 <template>
-  <div class="container-fluid py-5 bg-dashboard">
-    <div class="row justify-content-center mb-4">
-      <div class="col-md-10">
-        <div class="card neon-card text-center p-4">
-          <h2 class="text-info fw-bold">
-            <i class="bi bi-speedometer2 me-2"></i> Bienvenido al sistema de gestión
-          </h2>
-          <p class="text-light">
-            Desde aquí podrás acceder a todos los módulos del sistema, gestionar recursos, y más.
-          </p>
-        </div>
+  <div class="dashboard-container">
+    <div class="content-wrapper">
+      <div class="welcome-card">
+        <h2><i class="bi bi-speedometer2 me-2"></i> Bienvenido al sistema de gestión</h2>
+        <p>Desde aquí podrás acceder a todos los módulos del sistema, gestionar recursos y más.</p>
       </div>
-    </div>
 
-    <div class="row g-4 justify-content-center">
-      <router-link to="/hoteles" class="col-md-5 col-lg-3 text-decoration-none">
-        <div class="module-card card h-100 text-white text-center">
-          <div class="card-img-top module-bg"
-            style="background-image: url('https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=400&q=80')">
+      <div class="modules">
+        <router-link to="/hoteles" class="module-link">
+          <div class="module-card">
+            <div class="module-img" style="background-image: url('https://images.unsplash.com/photo-1561501900-3701fa6a0864?fm=jpg&q=60&w=3000&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8aG90ZWwlMjBkZSUyMGx1am98ZW58MHx8MHx8fDA%3D');"></div>
+            <div class="module-body">
+              <h5><i class="bi bi-building me-2"></i> Hoteles</h5>
+              <p>Gestiona hoteles, categorías y ubicaciones.</p>
+            </div>
           </div>
-          <div class="card-body">
-            <h5 class="card-title"><i class="bi bi-building me-2"></i> Hoteles</h5>
-            <p class="card-text">Gestiona hoteles, categorías y ubicaciones.</p>
-          </div>
-        </div>
-      </router-link>
+        </router-link>
 
-      <router-link to="/tours" class="col-md-5 col-lg-3 text-decoration-none">
-        <div class="module-card card h-100 text-white text-center">
-          <div class="card-img-top module-bg"
-            style="background-image: url('https://images.unsplash.com/photo-1464983953574-0892a716854b?auto=format&fit=crop&w=400&q=80')">
+        <router-link to="/tours" class="module-link">
+          <div class="module-card">
+            <div class="module-img" style="background-image: url('https://www.mundomapi.com/wp-content/uploads/2019/06/laguna-de-humantay-700x500.jpg');"></div>
+            <div class="module-body">
+              <h5><i class="bi bi-map me-2"></i> Tours</h5>
+              <p>Registra tours, destinos y actividades.</p>
+            </div>
           </div>
-          <div class="card-body">
-            <h5 class="card-title"><i class="bi bi-map me-2"></i> Tours</h5>
-            <p class="card-text">Registra tours, destinos y actividades.</p>
-          </div>
-        </div>
-      </router-link>
+        </router-link>
 
-      <router-link to="/proveedores" class="col-md-5 col-lg-3 text-decoration-none">
-        <div class="module-card card h-100 text-white text-center">
-          <div class="card-img-top module-bg"
-            style="background-image: url('https://images.unsplash.com/photo-1515378791036-0648a3ef77b2?auto=format&fit=crop&w=400&q=80')">
+        <router-link to="/proveedores" class="module-link">
+          <div class="module-card">
+            <div class="module-img" style="background-image: url('https://images.unsplash.com/photo-1515378791036-0648a3ef77b2?auto=format&fit=crop&w=800&q=80');"></div>
+            <div class="module-body">
+              <h5><i class="bi bi-truck me-2"></i> Proveedores</h5>
+              <p>Administra proveedores según su especialidad.</p>
+            </div>
           </div>
-          <div class="card-body">
-            <h5 class="card-title"><i class="bi bi-truck me-2"></i> Proveedores</h5>
-            <p class="card-text">Administra proveedores según su especialidad.</p>
-          </div>
-        </div>
-      </router-link>
+        </router-link>
 
-      <router-link to="/usuarios" class="col-md-5 col-lg-3 text-decoration-none">
-        <div class="module-card card h-100 text-white text-center">
-          <div class="card-img-top module-bg"
-            style="background-image: url('https://images.unsplash.com/photo-1519125323398-675f0ddb6308?auto=format&fit=crop&w=400&q=80')">
+        <router-link to="/usuarios" class="module-link">
+          <div class="module-card">
+            <div class="module-img" style="background-image: url('https://media.istockphoto.com/id/1257664126/es/foto/feliz-hombre-de-negocios-usando-port%C3%A1til-en-la-habitaci%C3%B3n-del-hotel-retrato.jpg?s=612x612&w=0&k=20&c=bXvq22kS5SWCCUBqct0_GJ-nLZn7dAceE00a38QvLbk=');"></div>
+            <div class="module-body">
+              <h5><i class="bi bi-person-fill me-2"></i> Usuarios</h5>
+              <p>Controla los accesos y roles del sistema.</p>
+            </div>
           </div>
-          <div class="card-body">
-            <h5 class="card-title"><i class="bi bi-person-fill me-2"></i> Usuarios</h5>
-            <p class="card-text">Controla los accesos y roles del sistema.</p>
-          </div>
-        </div>
-      </router-link>
+        </router-link>
+      </div>
     </div>
   </div>
 </template>
@@ -72,57 +58,97 @@ export default {
 </script>
 
 <style scoped>
-.bg-dashboard {
-  background: linear-gradient(135deg, #0e0e0e 30%, #1b1b1b 100%);
+.dashboard-container {
   min-height: 100vh;
+  width: 100%;
+  background: url('https://img2.wallspic.com/previews/1/9/6/3/0/103691/103691-la_reserva_natural_de-la_botanica-desierto-carretera-jardin-x750.jpg') no-repeat center center fixed;
+  background-size: cover;
+  padding: 2rem;
+  display: flex;
+  justify-content: center;
+  box-sizing: border-box;
 }
 
-.neon-card {
-  background-color: #1f1f1f;
-  border: 2px solid #00ffff;
-  box-shadow: 0 0 25px #00ffff55;
-  border-radius: 18px;
-  animation: pulse-border 2s infinite alternate;
+.content-wrapper {
+  width: 100%;
+  max-width: 1400px;
 }
 
-@keyframes pulse-border {
-  from {
-    box-shadow: 0 0 15px #00ffff55, 0 0 30px #00ffff33;
-  }
-  to {
-    box-shadow: 0 0 30px #00ffffaa, 0 0 50px #00ffff77;
-  }
+.welcome-card {
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(8px);
+  border-radius: 12px;
+  padding: 2.5rem;
+  text-align: center;
+  margin-bottom: 2.5rem;
+  color: #fff;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.welcome-card h2 {
+  font-size: 2.2rem;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+
+.welcome-card p {
+  font-size: 1.1rem;
+  color: #f0f0f0;
+}
+
+.modules {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2rem;
+  justify-content: center;
+}
+
+.module-link {
+  text-decoration: none;
+  width: 300px;
 }
 
 .module-card {
-  background: #1b1b1b;
-  border: 1px solid #333;
-  border-radius: 16px;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(8px);
+  border-radius: 6px; /* bordes rectos pero suaves */
   overflow: hidden;
-  transition: transform 0.3s, box-shadow 0.3s;
-  box-shadow: 0 0 12px rgba(0, 255, 255, 0.08);
+  color: #fff;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+  transition: transform 0.4s ease, box-shadow 0.4s ease;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  will-change: transform;
 }
 
 .module-card:hover {
-  transform: translateY(-10px) scale(1.05);
-  box-shadow: 0 0 20px rgba(0, 255, 255, 0.3), 0 0 40px rgba(0, 255, 255, 0.2);
+  transform: scale(1.08);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+  z-index: 10;
 }
 
-.module-bg {
+.module-img {
   height: 160px;
   background-size: cover;
   background-position: center;
-  filter: brightness(0.7);
+  filter: brightness(0.75);
 }
 
-.card-title {
+.module-body {
+  padding: 1rem 1.2rem;
+  flex-grow: 1;
+}
+
+.module-card h5 {
   font-size: 1.3rem;
-  font-weight: 700;
-  color: #00fff7;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
 }
 
-.card-text {
-  color: #ccc;
-  font-size: 0.95rem;
+.module-card p {
+  font-size: 1rem;
+  color: #ddd;
 }
 </style>
+

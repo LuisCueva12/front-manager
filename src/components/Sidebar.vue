@@ -1,4 +1,4 @@
-<template>
+<template> 
   <aside class="sidebar">
     <h2 class="sidebar-title">
       <i class="bi bi-list-ul me-2"></i> Menú
@@ -29,7 +29,6 @@ export default {
         { label: 'Tours', path: '/tours', icon: 'bi-map' },
         { label: 'Proveedores', path: '/proveedores', icon: 'bi-truck' },
         { label: 'Usuarios', path: '/usuarios', icon: 'bi-person-fill' },
-        { label: 'Roles', path: '/roles', icon: 'bi-shield-lock-fill' },
         { label: 'Calculadora', path: '/calculadora', icon: 'bi-calculator-fill' }
       ]
     }
@@ -41,16 +40,12 @@ export default {
 .sidebar {
   width: 240px;
   min-height: 100vh;
-  background: #0e0e0e;
-  color: #fff;
-  padding: 36px 22px 24px 22px;
-  box-shadow: 4px 0 24px rgba(0, 255, 255, 0.06);
-  border-top-right-radius: 24px;
-  border-bottom-right-radius: 24px;
-  backdrop-filter: blur(12px);
-  position: relative;
-  z-index: 2;
-  border-right: 2px solid #00ffff33;
+  background: linear-gradient(180deg, #1e1e2f 0%, #2a2a3d 100%);
+  color: #ffffff;
+  padding: 36px 22px;
+  box-shadow: 4px 0 16px rgba(0, 0, 0, 0.25);
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(10px);
 }
 
 .sidebar-title {
@@ -60,8 +55,8 @@ export default {
   display: flex;
   align-items: center;
   gap: 10px;
-  color: #00fff7;
-  text-shadow: 0 2px 8px rgba(0, 255, 255, 0.2);
+  color: #e1eaf2;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 .nav-list {
@@ -74,62 +69,58 @@ export default {
   display: flex;
   align-items: center;
   gap: 14px;
-  font-size: 1.13rem;
-  padding: 13px 16px;
+  font-size: 1.1rem;
+  padding: 12px 16px;
   margin-bottom: 12px;
-  border-radius: 12px;
-  color: #ecf0f1;
+  border-radius: 0;
+  color: #ccd6dd;
   text-decoration: none;
-  background: transparent;
-  transition: 
-    background 0.25s cubic-bezier(.4,0,.2,1),
-    color 0.2s,
-    box-shadow 0.2s,
-    transform 0.18s;
-  box-shadow: none;
-  font-weight: 500;
+  transition: all 0.2s ease;
   position: relative;
-  border-left: 4px solid transparent;
+  font-weight: 500;
 }
 
 .nav-link:hover {
-  background: rgba(0, 255, 255, 0.08);
-  color: #00fff7;
-  transform: translateX(8px) scale(1.04);
-  box-shadow: 0 4px 18px rgba(0, 255, 255, 0.1);
-  border-left: 4px solid #00fff7;
+  background: rgba(255, 255, 255, 0.06);
+  color: #ffffff;
+  transform: translateX(4px);
 }
 
 .nav-link.active {
-  background: linear-gradient(90deg, #00fff7 20%, #00bfa6 100%);
-  color: #fff;
+  background: #3a3f51;
+  color: #ffffff;
   font-weight: 700;
-  box-shadow: 0 6px 24px rgba(0, 255, 255, 0.3);
-  transform: scale(1.06);
-  border-left: 4px solid #ffffff;
+  border-left: 4px solid #1abc9c;
+  padding-left: 12px;
 }
 
 .icon {
-  font-size: 1.5em;
-  filter: drop-shadow(0 2px 6px rgba(0, 255, 255, 0.1));
+  font-size: 1.4rem;
+  color: #a5b5c5;
+  transition: color 0.2s;
+}
+
+.nav-link:hover .icon,
+.nav-link.active .icon {
+  color: #1abc9c;
 }
 
 @media (max-width: 700px) {
   .sidebar {
     width: 100vw;
-    border-radius: 0 0 24px 24px;
-    padding: 18px 10px 10px 10px;
+    padding: 18px 12px;
+    border-radius: 0;
+    min-height: auto;
   }
 
   .sidebar-title {
-    font-size: 1.1rem;
-    margin-bottom: 18px;
+    font-size: 1.2rem;
+    margin-bottom: 20px;
   }
 
   .nav-link {
     font-size: 1rem;
-    padding: 10px;
-    margin-bottom: 8px;
+    padding: 10px 14px;
   }
 }
 </style>
