@@ -36,7 +36,10 @@
           />
         </div>
 
-        <button type="submit" class="btn btn-info w-100 text-white fw-bold">Registrarse</button>
+        <button type="submit" class="btn btn-info w-100 text-white fw-bold" :disabled="loading">
+          <span v-if="loading" class="spinner-border spinner-border-sm me-2"></span>
+          {{ loading ? 'Registrando...' : 'Registrarse' }}
+        </button>
 
         <p class="text-center small mt-3">
           ¿Ya tienes cuenta?
@@ -49,13 +52,17 @@
 
 <script setup>
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 import Swal from 'sweetalert2'
+import { register } from '@/services/authService'
 
+const router = useRouter()
 const name = ref('')
 const email = ref('')
 const password = ref('')
+const loading = ref(false)
 
-function handleRegister() {
+async function handleRegister() {
   if (!email.value.includes('@') || password.value.length < 6) {
     Swal.fire({
       icon: 'error',
@@ -65,12 +72,39 @@ function handleRegister() {
     return
   }
 
-  Swal.fire({
-    icon: 'success',
-    title: 'Registro exitoso',
-    text: `¡Bienvenido, ${name.value}! Tu cuenta ha sido creada.`,
-    confirmButtonText: 'Continuar'
-  })
+  loading.value = true
+  
+  try {
+    const result = await register({
+      nombre: name.value,
+      correo: email.value,
+      password: password.value
+    })
+    
+    if (result.success) {
+      Swal.fire({
+        icon: 'success',
+        title: 'Registro exitoso',
+        text: `¡Bienvenido, ${name.value}! Tu cuenta ha sido creada.`,
+        confirmButtonText: 'Ir a Login'
+      }).then(() => {
+        router.push('/login')
+      })
+    }
+    
+  } catch (error) {
+    const message = error.response?.data?.message || 
+                   error.response?.data?.error || 
+                   'Error al crear la cuenta. Intenta nuevamente.'
+    
+    Swal.fire({
+      icon: 'error',
+      title: 'Error en el registro',
+      text: message
+    })
+  } finally {
+    loading.value = false
+  }
 }
 </script>
 

@@ -144,7 +144,6 @@
 <script>
 import Swal from 'sweetalert2'
 import Loading from 'vue-loading-overlay'
-import 'vue-loading-overlay/dist/vue-loading.css'
 import { createProveedor, getProveedor, updateProveedor } from '../../services/proveedorService.js'
 
 const ENUM_TIPOS = ['hotel','guia','transporte','restaurante','tour_operador','otro']

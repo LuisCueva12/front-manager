@@ -92,7 +92,6 @@
 import { login } from '@/services/authService'
 import Swal from 'sweetalert2'
 import Loading from 'vue-loading-overlay'
-import { setAuthToken, clearAuth } from '@/services/api'
 
 export default {
   components: { Loading },
@@ -103,51 +102,56 @@ export default {
     isLoading: false
   }),
   methods: {
-    async handleLogin() {
+    async handleLogin () {
       if (!this.username || this.password.length < 5) {
         Swal.fire('Datos inválidos', 'Completa el correo y la contraseña (mínimo 5 caracteres).', 'warning')
         return
       }
       this.isLoading = true
       try {
-        const res = await login(this.username, this.password) // { token, usuario, raw }
+        // El servicio fija token en axios y setea Pinia
+        const { token, user } = await login({ correo: this.username, password: this.password })
 
-        // limpia cualquier sesión previa y guarda token
-        clearAuth()
-        setAuthToken(res.token)
-        localStorage.setItem('usuario', JSON.stringify(res.usuario || {}))
-
-        // si no quiere recordar, también guarda en sessionStorage
-        if (!this.rememberMe) {
-          sessionStorage.setItem('token', res.token)
+        // Implementa "Recuérdame" real:
+        // - Si NO está marcado, pasamos el token a sessionStorage y borramos localStorage,
+        //   porque api.getAuthToken() prioriza localStorage.
+        if (!this.rememberMe && token) {
+          try {
+            sessionStorage.setItem('token', token)
+            localStorage.removeItem('auth:token')
+            localStorage.removeItem('token')
+          } catch {}
         }
 
         this.isLoading = false
         await Swal.fire({
           icon: 'success',
           title: '¡Bienvenido!',
-          text: res.usuario?.nombre || 'Acceso exitoso',
+          text: user?.name || user?.nombre || 'Acceso exitoso',
           confirmButtonColor: '#7e74f1'
         })
 
-        const redirect = this.$route.query.redirect || '/dashboard'
-        this.$router.push(redirect)
+        const redirect = typeof this.$route.query.redirect === 'string'
+          ? this.$route.query.redirect
+          : '/dashboard'
+        // replace para no volver al login al presionar "Atrás"
+        await this.$router.replace(redirect)
       } catch (err) {
         this.isLoading = false
-        clearAuth()
         Swal.fire('Error', err?.message || 'No se pudo iniciar sesión. Verifica tus datos.', 'error')
       }
     },
-    recuperarContrasena() { this.$router.push('/recuperar') },
-    loginFacebook() { Swal.fire('Info', 'Inicio de sesión con Facebook aún no disponible.', 'info') },
-    loginGoogle() { Swal.fire('Info', 'Inicio de sesión con Google aún no disponible.', 'info') },
-    goToRegister() { this.$router.push('/registro') },
-    volverInicio() { this.$router.push('/') }
+    recuperarContrasena () { this.$router.push('/recuperar') },
+    loginFacebook () { Swal.fire('Info', 'Inicio de sesión con Facebook aún no disponible.', 'info') },
+    loginGoogle () { Swal.fire('Info', 'Inicio de sesión con Google aún no disponible.', 'info') },
+    goToRegister () { this.$router.push('/registro') },
+    volverInicio () { this.$router.push('/') }
   }
 }
 </script>
 
 <style scoped>
+/* … tus estilos tal cual … */
 .login-wrapper { display:flex; height:100vh; font-family:'Poppins',sans-serif; }
 .login-left { flex:1; background:url('https://images.pexels.com/photos/2014422/pexels-photo-2014422.jpeg') no-repeat center/cover; position:relative; display:flex; align-items:center; justify-content:center; color:#fff; }
 .overlay { background:rgba(0,0,0,0.6); padding:3rem; border-radius:12px; text-align:center; }
@@ -156,11 +160,7 @@ export default {
 .social-icons i { font-size:1.5rem; margin:0 10px; cursor:pointer; color:#ffffffcc; transition:transform .3s; }
 .social-icons i:hover { transform:scale(1.2); color:#fff; }
 .login-right { flex:1; background:#121212; display:flex; align-items:center; justify-content:center; }
-
-/* tarjeta */
 .neon-card { background:rgba(255,255,255,.05); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); color:#fff; border-radius:16px; max-width:400px; width:100%; border:none; box-shadow:0 8px 24px rgba(0,0,0,.4); }
-
-/* botón transparente */
 .btn-outline-light { border:1px solid #ffffff99; color:#ffffffcc; transition:all .3s; }
 .btn-outline-light:hover { background:#ffffffcc; color:#000; }
 </style>

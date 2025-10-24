@@ -1,3 +1,4 @@
+<!-- src/modules/calculadora/Calculadora.vue -->
 <template>
   <div class="calculadora-container">
     <loading v-model:active="isLoading" :is-full-page="false" />
@@ -6,32 +7,53 @@
 
     <form @submit.prevent="calcularTotal">
       <div class="input-group">
+        <!-- HOTEL -->
         <div class="input-field">
           <label>Hotel</label>
           <div class="input-icon">
             <i class="bi bi-building"></i>
-            <select v-model="hotelSeleccionado">
-              <option disabled value="">Selecciona un hotel</option>
-              <option v-for="hotel in hoteles" :key="hotel.nombre" :value="hotel">
-                {{ hotel.nombre }} (S/ {{ hotel.tarifa }} por pasajero)
+            <select v-model="selHotelId">
+              <option disabled value="">
+                {{ hoteles.length ? 'Selecciona un hotel' : 'Cargando...' }}
+              </option>
+              <option
+                v-for="h in hoteles"
+                :key="String(h.id)"
+                :value="String(h.id)"
+              >
+                {{ h.nombre }} ({{ money(h.tarifa) }} por pasajero)
               </option>
             </select>
           </div>
+          <small class="text-muted" v-if="hotelSel">
+            Base: {{ money(hotelSel.tarifa) }}
+          </small>
         </div>
 
+        <!-- TOUR -->
         <div class="input-field">
           <label>Tour</label>
           <div class="input-icon">
             <i class="bi bi-binoculars"></i>
-            <select v-model="tourSeleccionado">
-              <option disabled value="">Selecciona un tour</option>
-              <option v-for="tour in tours" :key="tour.nombre" :value="tour">
-                {{ tour.nombre }} (S/ {{ tour.tarifa }} por pasajero)
+            <select v-model="selTourId">
+              <option disabled value="">
+                {{ tours.length ? 'Selecciona un tour' : 'Cargando...' }}
+              </option>
+              <option
+                v-for="t in tours"
+                :key="String(t.id)"
+                :value="String(t.id)"
+              >
+                {{ t.nombre }} ({{ money(t.tarifa) }} por pasajero)
               </option>
             </select>
           </div>
+          <small class="text-muted" v-if="tourSel">
+            Base: {{ money(tourSel.tarifa) }}
+          </small>
         </div>
 
+        <!-- PASAJEROS -->
         <div class="input-field">
           <label>N° Pasajeros</label>
           <div class="input-icon">
@@ -40,29 +62,40 @@
           </div>
         </div>
 
+        <!-- PROMO -->
         <div class="input-field">
           <label>Promoción</label>
           <div class="input-icon">
             <i class="bi bi-percent"></i>
-            <select v-model="promoSeleccionada">
+            <select v-model="selPromoId">
               <option value="">Sin promoción</option>
-              <option v-for="promo in promociones" :key="promo.nombre" :value="promo">
-                {{ promo.nombre }} ({{ promo.desc }})
+              <option v-for="p in promociones" :key="p.id" :value="p.id">
+                {{ p.nombre }} ({{ p.desc }})
               </option>
             </select>
           </div>
         </div>
       </div>
 
-      <button type="submit" class="btn btn-success" :disabled="!hotelSeleccionado || !tourSeleccionado || !pasajeros">
+      <button
+        type="submit"
+        class="btn btn-success"
+        :disabled="!hotelSel || !tourSel || pasajeros < 1"
+      >
         <i class="bi bi-cash-coin"></i> Calcular Total
       </button>
     </form>
 
+    <!-- RESULTADO -->
     <div class="resultado mt-4" v-if="total !== null">
-      <div><strong>Subtotal:</strong> S/ {{ subtotal.toFixed(2) }}</div>
-      <div v-if="promoSeleccionada"><strong>Descuento:</strong> -S/ {{ descuento.toFixed(2) }} ({{ promoSeleccionada.desc }})</div>
-      <div><strong>Total:</strong> <span class="total-final">S/ {{ total.toFixed(2) }}</span></div>
+      <div><strong>Subtotal:</strong> {{ money(subtotal) }}</div>
+      <div v-if="promoSel">
+        <strong>Descuento:</strong> -{{ money(descuento) }} ({{ promoSel.desc }})
+      </div>
+      <div>
+        <strong>Total:</strong>
+        <span class="total-final">{{ money(total) }}</span>
+      </div>
     </div>
   </div>
 </template>
@@ -71,101 +104,146 @@
 import Loading from 'vue-loading-overlay'
 import Swal from 'sweetalert2'
 
+// Usa los *Lite* que ya normalizan
+import { getHotelesLite } from '../../services/hotelService'
+import { getToursLite }   from '../../services/tours'
+
+// opcional
+import { calcularTotalLocal } from '../../services/calculadoraService'
+
+// formateador S/.
+const PEN = new Intl.NumberFormat('es-PE', {
+  style: 'currency',
+  currency: 'PEN',
+  minimumFractionDigits: 2
+})
+
+// --------- FAKE PRICES (determinísticos por ID) ----------
+const hashInt = (str) => {
+  str = String(str || '')
+  let h = 0
+  for (let i = 0; i < str.length; i++) {
+    h = ((h << 5) - h) + str.charCodeAt(i)
+    h |= 0
+  }
+  return Math.abs(h)
+}
+const fakeFromRange = (id, min, max, step = 5) => {
+  const r = hashInt(id) % ((max - min) / step + 1)
+  return min + r * step
+}
+const precioFakeHotel = (id) => fakeFromRange(id, 90, 240, 5)   // S/ 90 — 240
+const precioFakeTour  = (id) => fakeFromRange(id, 60, 180, 5)   // S/ 60 — 180
+// ----------------------------------------------------------
+
 export default {
   components: { Loading },
   data() {
     return {
       isLoading: false,
-      hoteles: [
-        { nombre: 'Hotel Sol', tarifa: 120 },
-        { nombre: 'Hotel Luna', tarifa: 95 },
-        { nombre: 'Hotel Estrella', tarifa: 150 }
-      ],
-      tours: [
-        { nombre: 'Tour Montaña', tarifa: 80 },
-        { nombre: 'Tour Ciudad', tarifa: 60 },
-        { nombre: 'Tour Aventura', tarifa: 110 }
-      ],
-      promociones: [
-        { nombre: 'Promo 10% OFF', desc: '10% de descuento', porcentaje: 10 },
-        { nombre: 'Promo 20% OFF', desc: '20% de descuento', porcentaje: 20 }
-      ],
-      hotelSeleccionado: '',
-      tourSeleccionado: '',
+
+      hoteles: [], // [{ id, nombre, tarifa }]
+      tours:   [], // [{ id, nombre, tarifa }]
+
+      selHotelId: '',
+      selTourId: '',
       pasajeros: 1,
-      promoSeleccionada: '',
+
+      promociones: [
+        { id: 'p10', nombre: 'Promo 10% OFF', desc: '10% de descuento', porcentaje: 10 },
+        { id: 'p20', nombre: 'Promo 20% OFF', desc: '20% de descuento', porcentaje: 20 }
+      ],
+      selPromoId: '',
+
       subtotal: 0,
       descuento: 0,
       total: null
-    };
+    }
+  },
+  computed: {
+    hotelSel() {
+      return this.hoteles.find(h => String(h.id) === this.selHotelId) || null
+    },
+    tourSel() {
+      return this.tours.find(t => String(t.id) === this.selTourId) || null
+    },
+    promoSel() {
+      return this.promociones.find(p => p.id === this.selPromoId) || null
+    }
   },
   methods: {
+    money(n) {
+      const v = Number(n || 0)
+      return PEN.format(isFinite(v) ? v : 0)
+    },
+
+    async cargarListas() {
+      try {
+        this.isLoading = true
+        const [hot, tou] = await Promise.all([
+          getHotelesLite(),
+          getToursLite()
+        ])
+
+        // Si la API trae 0 o vacío, aplicamos precios falsos por ID
+        this.hoteles = (Array.isArray(hot) ? hot : []).map(h => ({
+          ...h,
+          tarifa: Number(h.tarifa) > 0 ? Number(h.tarifa) : precioFakeHotel(h.id)
+        }))
+        this.tours = (Array.isArray(tou) ? tou : []).map(t => ({
+          ...t,
+          tarifa: Number(t.tarifa) > 0 ? Number(t.tarifa) : precioFakeTour(t.id)
+        }))
+
+        if (!this.hoteles.length || !this.tours.length) {
+          Swal.fire('Aviso', 'No se encontraron hoteles o tours. Verifica la API.', 'info')
+        }
+      } catch (e) {
+        console.error(e)
+        Swal.fire('Error', 'No se pudieron cargar hoteles/tours.', 'error')
+      } finally {
+        this.isLoading = false
+      }
+    },
+
     async calcularTotal() {
-      if (!this.hotelSeleccionado || !this.tourSeleccionado || !this.pasajeros) {
-        Swal.fire('Campos incompletos', 'Por favor selecciona hotel, tour y número de pasajeros.', 'warning');
-        return;
+      if (!this.hotelSel || !this.tourSel || !(this.pasajeros >= 1)) {
+        Swal.fire('Campos incompletos', 'Selecciona hotel, tour y pasajeros (>=1).', 'warning')
+        return
       }
 
-      this.isLoading = true;
-      await new Promise(resolve => setTimeout(resolve, 600));
+      this.isLoading = true
+      await new Promise(r => setTimeout(r, 120))
 
-      const subtotal = (this.hotelSeleccionado.tarifa + this.tourSeleccionado.tarifa) * this.pasajeros;
-      let descuento = 0;
-      if (this.promoSeleccionada) {
-        descuento = subtotal * (this.promoSeleccionada.porcentaje / 100);
+      const precioHotel = Number(this.hotelSel.tarifa || 0)
+      const precioTour  = Number(this.tourSel.tarifa  || 0)
+      const promoPct    = Number(this.promoSel?.porcentaje || 0)
+
+      let subtotal, descuento, total
+      if (typeof calcularTotalLocal === 'function') {
+        const r = calcularTotalLocal({ precioHotel, precioTour, pasajeros: this.pasajeros, promoPct })
+        subtotal  = r.subtotal
+        descuento = r.descuentoPromo
+        total     = r.total
+      } else {
+        subtotal  = (precioHotel + precioTour) * Number(this.pasajeros || 1)
+        descuento = subtotal * (promoPct / 100)
+        total     = subtotal - descuento
       }
-      this.subtotal = subtotal;
-      this.descuento = descuento;
-      this.total = subtotal - descuento;
 
-      this.isLoading = false;
-      Swal.fire('Cálculo exitoso', `El total a pagar es S/ ${this.total.toFixed(2)}`, 'success');
+      this.subtotal  = subtotal
+      this.descuento = descuento
+      this.total     = total
+
+      this.isLoading = false
+      Swal.fire('Cálculo listo', `Total: ${this.money(this.total)}`, 'success')
     }
+  },
+  mounted() {
+    this.cargarListas()
   }
-};
+}
 </script>
-
-<style scoped>
-.calculadora-container {
-  max-width: 700px;
-  margin: auto;
-  padding: 1rem;
-}
-.input-group {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-}
-.input-field {
-  flex: 1 1 45%;
-}
-.input-icon {
-  position: relative;
-}
-.input-icon i {
-  position: absolute;
-  left: 10px;
-  top: 50%;
-  transform: translateY(-50%);
-}
-.input-icon input,
-.input-icon select {
-  padding-left: 2rem;
-  width: 100%;
-}
-.resultado {
-  margin-top: 1rem;
-  background-color: #f4f4f4;
-  padding: 1rem;
-  border-radius: 10px;
-}
-.total-final {
-  font-size: 1.4rem;
-  font-weight: bold;
-  color: green;
-}
-</style>
-
 
 <style scoped>
 .calculadora-container {
@@ -191,9 +269,7 @@ h2 {
   gap: 10px;
 }
 
-form {
-  width: 100%;
-}
+form { width: 100%; }
 
 .input-group {
   display: flex;
@@ -220,10 +296,7 @@ form {
   text-align: left;
 }
 
-.input-icon {
-  position: relative;
-  width: 100%;
-}
+.input-icon { position: relative; width: 100%; }
 
 .input-icon i.bi {
   position: absolute;
@@ -270,14 +343,8 @@ button {
   justify-content: center;
 }
 
-button:disabled {
-  background-color: #b2dfdb;
-  cursor: not-allowed;
-}
-
-button:hover:enabled {
-  background-color: #149174;
-}
+button:disabled { background-color: #b2dfdb; cursor: not-allowed; }
+button:hover:enabled { background-color: #149174; }
 
 .resultado {
   font-size: 1.2rem;
@@ -290,8 +357,5 @@ button:hover:enabled {
   box-shadow: 0 2px 8px rgba(22,160,133,0.07);
 }
 
-.total-final {
-  color: #16a085;
-  font-weight: 700;
-}
+.total-final { color: #16a085; font-weight: 700; }
 </style>
